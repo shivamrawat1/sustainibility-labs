@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inpainted Image</title>
+</head>
+<body>
+    <h1>Here is your inpainted image:</h1>
+    <img src="{{ url_for('output_image', filename=output_image) }}" alt="Inpainted Image">
+</body>
+</html>

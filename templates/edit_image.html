@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Your Image</title>
+    <script src="https://cdn.jsdelivr.net/npm/fabric@4.6.0/dist/fabric.min.js"></script>
+</head>
+<body>
+    <h2>Edit Your Image</h2>
+    <div id="canvasContainer">
+        <canvas id="imageCanvas"></canvas>
+    </div>
+    <form id="promptForm" action="{{ url_for('process_image') }}" method="post">
+        <input type="hidden" name="image_filename" value="{{ image_filename }}">
+        <input type="hidden" name="mask_data" id="maskData"> <!-- For mask data -->
+        <label for="prompt">Enter your prompt:</label>
+        <input type="text" name="prompt" id="prompt" required>
+        <button type="submit">Generate</button>
+    </form>
+    <p>Select an area on the image to apply your changes.</p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = new fabric.Canvas('imageCanvas');
+
+            // Load the uploaded image onto the canvas
+            const imageUrl = "{{ url_for('uploaded_file', filename=image_filename) }}";
+            fabric.Image.fromURL(imageUrl, function(img) {
+                img.set({ selectable: false });
+                canvas.setWidth(img.width);
+                canvas.setHeight(img.height);
+                canvas.add(img);
+            });
+
+            // Disable free drawing mode and enable rectangle selection
+            canvas.isDrawingMode = false;
+
+            let rect, isDown, origX, origY;
+
+            // Mouse down event to start drawing a rectangle
+            canvas.on('mouse:down', function(o) {
+                isDown = true;
+                const pointer = canvas.getPointer(o.e);
+                origX = pointer.x;
+                origY = pointer.y;
+
+                rect = new fabric.Rect({
+                    left: origX,
+                    top: origY,
+                    originX: 'left',
+                    originY: 'top',
+                    width: pointer.x - origX,
+                    height: pointer.y - origY,
+                    fill: 'rgba(255, 255, 255, 0.5)',  // transparent white fill
+                    selectable: false
+                });
+                canvas.add(rect);
+            });
+
+            // Mouse move event to resize the rectangle while dragging
+            canvas.on('mouse:move', function(o) {
+                if (!isDown) return;
+                const pointer = canvas.getPointer(o.e);
+
+                if (pointer.x < origX) {
+                    rect.set({ left: Math.abs(pointer.x) });
+                }
+                if (pointer.y < origY) {
+                    rect.set({ top: Math.abs(pointer.y) });
+                }
+
+                rect.set({ width: Math.abs(origX - pointer.x) });
+                rect.set({ height: Math.abs(origY - pointer.y) });
+
+                canvas.renderAll();
+            });
+
+            // Mouse up event to finish drawing the rectangle
+            canvas.on('mouse:up', function(o) {
+                isDown = false;
+                // Rectangle drawn - save the mask area (coordinates)
+                const maskData = {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height
+                };
+                // Save the mask data in the hidden input for the form
+                document.getElementById('maskData').value = JSON.stringify(maskData);
+            });
+
+            // When submitting the form, include the mask data
+            document.getElementById('promptForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                // Submit the form
+                this.submit();
+            });
+        });
+    </script>
+</body>
+</html>
