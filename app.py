@@ -1,12 +1,15 @@
 import os
 import replicate
-import requests
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw
 import json
 import logging
 import base64
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize the Flask app
 app = Flask(__name__)
